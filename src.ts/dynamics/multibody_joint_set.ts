@@ -13,7 +13,7 @@ import {
 } from "./multibody_joint";
 import {ImpulseJointHandle, JointData, JointType} from "./impulse_joint";
 import {IslandManager} from "./island_manager";
-import {ColliderHandle} from "../geometry";
+import {Collider, ColliderHandle} from "../geometry";
 import {RigidBodyHandle} from "./rigid_body";
 
 /**
@@ -47,9 +47,13 @@ export class MultibodyJointSet {
         // Initialize the map with the existing elements, if any.
         if (raw) {
             raw.forEachJointHandle((handle: MultibodyJointHandle) => {
-                this.map.set(handle, MultibodyJoint.newTyped(this.raw, handle));
+                this.map.set(handle, MultibodyJoint.newTyped(raw, handle));
             });
         }
+    }
+    /** @internal */
+    public finalizeDeserialization(bodies: RigidBodySet) {
+        this.map.forEach((joint) => joint.finalizeDeserialization(bodies));
     }
 
     /**
@@ -83,11 +87,11 @@ export class MultibodyJointSet {
      * Remove a joint from this set.
      *
      * @param handle - The integer handle of the joint.
-     * @param wake_up - If `true`, the rigid-bodies attached by the removed joint will be woken-up automatically.
+     * @param wakeUp - If `true`, the rigid-bodies attached by the removed joint will be woken-up automatically.
      */
-    public remove(handle: MultibodyJointHandle, wake_up: boolean) {
-        this.raw.remove(handle, wake_up);
-        this.map.delete(handle);
+    public remove(handle: MultibodyJointHandle, wakeUp: boolean) {
+        this.raw.remove(handle, wakeUp);
+        this.unmap(handle);
     }
 
     /**

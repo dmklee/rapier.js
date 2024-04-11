@@ -1,6 +1,6 @@
-use crate::dynamics::{RawJointAxis, RawJointType, RawMultibodyJointSet};
+use crate::dynamics::{RawJointAxis, RawJointType, RawMultibodyJointSet, RawMotorModel};
 use crate::math::{RawRotation, RawVector};
-use crate::utils::FlatHandle;
+use crate::utils::{FlatHandle};
 use rapier::dynamics::JointAxis;
 use wasm_bindgen::prelude::*;
 
@@ -47,6 +47,20 @@ impl RawMultibodyJointSet {
         self.map(handle, |j| j.data.local_frame2.translation.vector.into())
     }
 
+    /// Sets the position of the first local anchor
+	pub fn jointSetAnchor1(&mut self, handle: FlatHandle, newPos: &RawVector) {
+        self.map_mut(handle, |j| {
+            j.data.set_local_anchor1(newPos.0.into());
+        });
+    }
+
+    /// Sets the position of the second local anchor
+    pub fn jointSetAnchor2(&mut self, handle: FlatHandle, newPos: &RawVector) {
+        self.map_mut(handle, |j| {
+            j.data.set_local_anchor2(newPos.0.into());
+        })
+    }
+
     /// Are contacts between the rigid-bodies attached by this joint enabled?
     pub fn jointContactsEnabled(&self, handle: FlatHandle) -> bool {
         self.map(handle, |j| j.data.contacts_enabled)
@@ -76,16 +90,23 @@ impl RawMultibodyJointSet {
         self.map(handle, |j| j.data.limits[axis as usize].max)
     }
 
-    // pub fn jointConfigureMotorModel(
-    //     &mut self,
-    //     handle: FlatHandle,
-    //     axis: RawJointAxis,
-    //     model: RawMotorModel,
-    // ) {
-    //     self.map_mut(handle, |j| {
-    //         j.data.motors[axis as usize].model = model.into()
-    //     })
-    // }
+	pub fn jointConfigureMotorModel(
+		&mut self,
+		handle: FlatHandle,
+		axis: RawJointAxis,
+		model: RawMotorModel,
+	) {
+		self.map_mut(handle, |j| {
+			j.data.motors[axis as usize].model = model.into()
+		})
+	}
+
+	/// Enables and sets the joint limits
+    pub fn jointSetLimits(&mut self, handle: FlatHandle, axis: RawJointAxis, min: f32, max: f32) {
+        self.map_mut(handle, |j| {
+            j.data.set_limits(axis.into(), [min, max]);
+        });
+    }
 
     /*
     #[cfg(feature = "dim3")]
@@ -156,41 +177,42 @@ impl RawMultibodyJointSet {
     }
     */
 
-    // pub fn jointConfigureMotorVelocity(
-    //     &mut self,
-    //     handle: FlatHandle,
-    //     axis: RawJointAxis,
-    //     targetVel: f32,
-    //     factor: f32,
-    // ) {
-    //     self.jointConfigureMotor(handle, axis, 0.0, targetVel, 0.0, factor)
-    // }
-    //
-    // pub fn jointConfigureMotorPosition(
-    //     &mut self,
-    //     handle: FlatHandle,
-    //     axis: RawJointAxis,
-    //     targetPos: f32,
-    //     stiffness: f32,
-    //     damping: f32,
-    // ) {
-    //     self.jointConfigureMotor(handle, axis, targetPos, 0.0, stiffness, damping)
-    // }
+	pub fn jointConfigureMotorVelocity(
+		&mut self,
+		handle: FlatHandle,
+		axis: RawJointAxis,
+		targetVel: f32,
+		factor: f32,
+	) {
+		self.jointConfigureMotor(handle, axis, 0.0, targetVel, 0.0, factor)
+	}
 
-    // pub fn jointConfigureMotor(
-    //     &mut self,
-    //     handle: FlatHandle,
-    //     axis: RawJointAxis,
-    //     targetPos: f32,
-    //     targetVel: f32,
-    //     stiffness: f32,
-    //     damping: f32,
-    // ) {
-    //     self.map_mut(handle, |j| {
-    //         j.data.motors[axis as usize].target_pos = targetPos;
-    //         j.data.motors[axis as usize].target_vel = targetVel;
-    //         j.data.motors[axis as usize].stiffness = stiffness;
-    //         j.data.motors[axis as usize].damping = damping;
-    //     })
-    // }
+    pub fn jointConfigureMotorPosition(
+        &mut self,
+        handle: FlatHandle,
+        axis: RawJointAxis,
+        targetPos: f32,
+        stiffness: f32,
+        damping: f32,
+    ) {
+        self.jointConfigureMotor(handle, axis, targetPos, 0.0, stiffness, damping)
+    }
+
+    pub fn jointConfigureMotor(
+        &mut self,
+        handle: FlatHandle,
+        axis: RawJointAxis,
+        targetPos: f32,
+        targetVel: f32,
+        stiffness: f32,
+        damping: f32,
+    ) {
+        self.map_mut(handle, |j| {
+            j.data.set_motor(axis.into(), targetPos, targetVel, stiffness, damping);
+            //j.data.motors[axis as usize].target_pos = targetPos;
+            //j.data.motors[axis as usize].target_vel = targetVel;
+            //j.data.motors[axis as usize].stiffness = stiffness;
+            //j.data.motors[axis as usize].damping = damping;
+        })
+    }
 }
